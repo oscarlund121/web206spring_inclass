@@ -1,7 +1,12 @@
 import Image from "next/image";
+import Todo from "../components/Todo";
 
 export default function Home() {
   return (
-    <h1>Home</h1>
+    <div className="">
+      <h1>Home</h1>
+
+      <Todo></Todo>
+    </div>
   )
 }
