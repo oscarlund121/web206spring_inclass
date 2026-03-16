@@ -1,4 +1,4 @@
-import { Product } from "../../types/product";
+import { Product } from "../types/product";
 
 export const products: Product[] = [
     { id: 1, name: "Cat", price: 10, description: "Description 1", category: "Pet" },

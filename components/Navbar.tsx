@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Navbar() {
     return (
         <nav className="navbar">
@@ -8,6 +10,10 @@ export function Navbar() {
                         alt="Bulma logo"
                     />
                 </a>
+            </div>
+            <div className="navbar__links">
+                <Link href="/">Home</Link>
+                <Link href="/products">Products</Link>
             </div>
         </nav>
     );
