@@ -3,7 +3,7 @@ import { Product } from "@/types/product";
 
 type ProductCardProps = {
   product: Product;
-  setCartItemCount: () => void; // prepare so we can send the function in the prop object
+  setCartItemCount: () => void;
 };
 
 export default function ProductCard({ product, setCartItemCount }: ProductCardProps) {
