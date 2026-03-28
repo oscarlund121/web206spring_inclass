@@ -187,3 +187,83 @@ a {
 .button-link:hover {
   background: #1d4ed8;
 }
+
+/* CRUD demo */
+.crud-form {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.crud-form h2 {
+  margin-top: 0;
+}
+
+.crud-form__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.crud-form__fields input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.crud-form__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.crud-form__actions button,
+.crud-table__actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: #2563eb;
+  color: white;
+}
+
+.crud-form__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.crud-table__actions button.danger {
+  background: #ef4444;
+}
+
+.crud-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.crud-table th,
+.crud-table td {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.9rem;
+}
+
+.crud-table th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.crud-table__actions {
+  display: flex;
+  gap: 0.5rem;
+}

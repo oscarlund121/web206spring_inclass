@@ -1,0 +1,51 @@
+import { http, HttpResponse } from "msw";
+import { Product } from "../types/product";
+
+// In-memory "database" seeded with the dummy data
+let productStore: Product[] = [
+    { id: 1, name: "Cat",      price: 10,  description: "Description 1", category: "Pet"    },
+    { id: 2, name: "Dog",      price: 5,   description: "Description 2", category: "Pet"    },
+    { id: 3, name: "Giraffe",  price: 120, description: "Description 3", category: "Animal" },
+    { id: 4, name: "Elephant", price: 150, description: "Description 4", category: "Animal" },
+];
+
+let nextId = 5;
+
+export const handlers = [
+    // GET /api/products
+    http.get("/api/products", () => {
+        return HttpResponse.json(productStore);
+    }),
+
+    // GET /api/products/:id
+    http.get("/api/products/:id", ({ params }) => {
+        const product = productStore.find((p) => p.id === Number(params.id));
+        if (!product) return new HttpResponse(null, { status: 404 });
+        return HttpResponse.json(product);
+    }),
+
+    // POST /api/products
+    http.post("/api/products", async ({ request }) => {
+        const body = (await request.json()) as Omit<Product, "id">;
+        const newProduct: Product = { id: nextId++, ...body };
+        productStore.push(newProduct);
+        return HttpResponse.json(newProduct, { status: 201 });
+    }),
+
+    // PUT /api/products/:id
+    http.put("/api/products/:id", async ({ params, request }) => {
+        const body = (await request.json()) as Partial<Product>;
+        const index = productStore.findIndex((p) => p.id === Number(params.id));
+        if (index === -1) return new HttpResponse(null, { status: 404 });
+        productStore[index] = { ...productStore[index], ...body };
+        return HttpResponse.json(productStore[index]);
+    }),
+
+    // DELETE /api/products/:id
+    http.delete("/api/products/:id", ({ params }) => {
+        const index = productStore.findIndex((p) => p.id === Number(params.id));
+        if (index === -1) return new HttpResponse(null, { status: 404 });
+        productStore.splice(index, 1);
+        return new HttpResponse(null, { status: 204 });
+    }),
+];

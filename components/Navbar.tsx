@@ -14,6 +14,7 @@ export function Navbar() {
             <div className="navbar__links">
                 <Link href="/">Home</Link>
                 <Link href="/products">Products</Link>
+                <Link href="/products/crud">CRUD Demo</Link>
             </div>
         </nav>
     );
