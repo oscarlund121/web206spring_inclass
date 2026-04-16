@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { Product } from "../../types/product";
 
@@ -84,50 +84,69 @@ export function useProducts() {
 
     // CREATE
     //
-    // useCallback here is optional (there is no useEffect depending on it),
-    // but it is a good habit: if this function is passed as a prop to a child
-    // component wrapped in React.memo (tells React to skip re-rendering a component 
-    // if its props haven't changed.), a stable reference prevents that child
-    // from re-rendering unnecessarily every time the parent renders.
-    const createProduct = useCallback(async (data: Omit<Product, "id">) => {
-        // MSW handles POST and returns the new product with an auto-generated id.
-        // With a real backend this fetch call stays exactly the same —
-        // just make sure the server also responds with the created product (201).
-        const response = await fetch(baseUrl+"/api/products", {
-            method: 'POST',
-            // headers: {
-            //     'Content-Type': 'application/json'
-            // },
-            body: JSON.stringify(data)
-        })
-        const product = await response.json()
+    // ── WITHOUT TanStack useMutation (commented out) ──────────────────────────
+    // Plain useCallback approach — we manage the fetch and cache update manually.
+    //
+    // const createProduct = useCallback(async (data: Omit<Product, "id">) => {
+    //     const response = await fetch(baseUrl + "/api/products", {
+    //         method: "POST",
+    //         body: JSON.stringify(data),
+    //     });
+    //     const product = await response.json();
+    //
+    //     // ── WITHOUT TanStack Query ────────────────────────────────────────
+    //     // Manually append to the local products state:
+    //     // setProducts(products => [...products, product])
+    //     // ─────────────────────────────────────────────────────────────────
+    //
+    //     // ── WITH TanStack Query ───────────────────────────────────────────
+    //     // Option 1 — setQueryData: instant, no extra fetch:
+    //     // queryClient.setQueryData<Product[]>(["products"], (old = []) => [...old, product])
+    //     //
+    //     // Option 2 — invalidateQueries: re-fetches from server to stay in sync:
+    //     // queryClient.invalidateQueries({ queryKey: ["products"] })
+    //     // ─────────────────────────────────────────────────────────────────
+    // }, []);
+    // ─────────────────────────────────────────────────────────────────────────
 
-        // ── WITHOUT TanStack Query ──────────────────────────────────────────
-        // Manually append to the local products state:
-        // setProducts(products => [...products, product])
-        // ───────────────────────────────────────────────────────────────────
+    // ── WITH TanStack useMutation ─────────────────────────────────────────────
+    // useMutation is TanStack's way to handle CUD operations (Create, Update, Delete).
+    // Benefits over plain useCallback:
+    //   - isPending / isError / isSuccess states are tracked automatically.
+    //   - onSuccess / onError / onSettled lifecycle hooks keep side-effects tidy.
+    //   - No manual try/catch needed for standard error handling.
+    //
+    // mutationFn: the async function that performs the actual request.
+    // onSuccess:  runs after mutationFn resolves. We update the cache here so
+    //             the new product appears immediately without a refetch.
+    const createMutation = useMutation({
+        mutationFn: async (data: Omit<Product, "id">) => {
+            // MSW handles POST and returns the new product with an auto-generated id.
+            // With a real backend this fetch call stays exactly the same —
+            // just make sure the server also responds with the created product (201).
+            const response = await fetch(baseUrl + "/api/products", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) throw new Error("Failed to create product");
+            return response.json() as Promise<Product>;
+        },
+        onSuccess: (product) => {
+            // Option 1 — setQueryData: append the new product directly to the cache.
+            // No extra network request. Works because the server returned the full item.
+            queryClient.setQueryData<Product[]>(["products"], (old = []) => [...old, product]);
 
-        // ── WITH TanStack Query ─────────────────────────────────────────────
-        // Two ways to update the UI after a mutation:
-        //
-        // 1. setQueryData — updates the cache directly with the data we already
-        //    have from the server response. No extra network request. Instant.
-        //    Best when the server returns the new/updated item in its response.
-        //
-        // 2. invalidateQueries — marks the cache as stale and triggers a refetch
-        //    of GET /api/products. Costs an extra network round-trip but guarantees
-        //    the client is in sync with the server.
-        //    Best when the server does NOT return the updated data, or when other
-        //    side-effects on the server might have changed the list.
-        //
-        // Option 1 — setQueryData (active):
-        queryClient.setQueryData<Product[]>(["products"], (old = []) => [...old, product])
-        //
-        // Option 2 — invalidateQueries (commented out):
-        // queryClient.invalidateQueries({ queryKey: ["products"] })
-        // ───────────────────────────────────────────────────────────────────
+            // Option 2 — invalidateQueries (commented out):
+            // Re-fetches the full list. Use this if the server may have made
+            // other changes you don't know about.
+            // queryClient.invalidateQueries({ queryKey: ["products"] });
+        },
+    });
 
-    }, []);
+    // Wrap in a plain async function so the rest of the component API stays the same.
+    // Callers use createProduct(data) exactly as before.
+    const createProduct = (data: Omit<Product, "id">) => createMutation.mutateAsync(data);
+    // ─────────────────────────────────────────────────────────────────────────
 
     // UPDATE — same reasoning as createProduct above
     const updateProduct = useCallback(async (id: number, data: Partial<Omit<Product, "id">>) => {
@@ -186,6 +205,6 @@ export function useProducts() {
 
     }, []);
 
-    return { products, createProduct, updateProduct, deleteProduct, isLoading, error: error || fetchError?.message || "", voteUpLike, liked };
+    return { products, createProduct, updateProduct, deleteProduct, isLoading, isCreating: createMutation.isPending, error: error || fetchError?.message || "", voteUpLike, liked };
 }
 
